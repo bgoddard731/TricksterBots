@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Trickster.cloud;
@@ -395,7 +395,7 @@ namespace Trickster.Bots
             return state.cardsPlayedInOrder.Length == 0;
         }
 
-        private Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> teamCards)
+        private new Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> teamCards)
         {
             var nonTrumpCards = legalCards.Where(c => !IsTrump(c)).ToList();
 

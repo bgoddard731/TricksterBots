@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Trickster.cloud;
@@ -9,6 +9,27 @@ namespace Trickster.Bots
     {
         public WhistBot(WhistOptions options, Suit trumpSuit) : base(options, trumpSuit)
         {
+        }
+
+        protected override Card TryPrioritizeDiscardWhenVoidNoTrump(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
+        {
+            if (trump != Suit.Unknown)
+                return null;
+
+            var jokers = legalCards.Where(c => c.suit == Suit.Joker).ToList();
+            return jokers.Count == 0 ? null : jokers.OrderBy(RankSort).First();
+        }
+
+        protected override Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
+        {
+            if (trump == Suit.Unknown)
+            {
+                var jokers = legalCards.Where(c => c.suit == Suit.Joker).ToList();
+                if (jokers.Count > 0)
+                    return jokers.OrderBy(RankSort).First();
+            }
+
+            return base.LowestCardFromWeakestSuit(legalCards, cardsPlayed);
         }
 
         public override BidBase SuggestBid(SuggestBidState<WhistOptions> state)

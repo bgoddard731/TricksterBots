@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -483,8 +483,10 @@ namespace Trickster.Bots
                 }
                 else
                 {
-                    //  we can't follow suit and don't have trump - try signaling a good suit
-                    suggestion = TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);
+                    //  we can't follow suit and don't have trump - game-specific discard priority, then try signaling a good suit
+                    suggestion = TryPrioritizeDiscardWhenVoidNoTrump(player, legalCards, cardsPlayed, isDefending);
+                    if (suggestion == null)
+                        suggestion = TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);
                 }
             }
 
@@ -501,8 +503,17 @@ namespace Trickster.Bots
         }
 
 
+        /// <summary>
+        ///     When void in the led suit and holding no trump, optionally choose a card to discard before partner signaling.
+        ///     Default: no priority (null).
+        /// </summary>
+        protected virtual Card TryPrioritizeDiscardWhenVoidNoTrump(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
+        {
+            return null;
+        }
+
         //  NOTE: If you're going to edit this in a game-specific way, copy the method to your bot and edit it there
-        private Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
+        protected virtual Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
         {
             var nonTrumpCards = legalCards.Where(c => !IsTrump(c)).ToList();
 
