@@ -13,13 +13,9 @@ namespace Trickster.Bots
 
         protected override Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
         {
-            //  In no-trump, when void and not holding trump, slough lowest joker before partner signaling (jokers are dead in NT)
-            if (trump == Suit.Unknown && !legalCards.Any(IsTrump))
-            {
-                var jokers = legalCards.Where(c => c.suit == Suit.Joker).ToList();
-                if (jokers.Count > 0)
-                    return jokers.OrderBy(RankSort).First();
-            }
+            //  In no-trump, slough jokers before signaling a good suit (jokers are dead in NT)
+            if (trump == Suit.Unknown && legalCards.Any(c => c.suit == Suit.Joker))
+                return legalCards.First(c => c.suit == Suit.Joker);
 
             return base.TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);
         }
