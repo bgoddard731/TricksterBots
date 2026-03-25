@@ -395,7 +395,7 @@ namespace Trickster.Bots
             return state.cardsPlayedInOrder.Length == 0;
         }
 
-        private new Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> teamCards)
+        private Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> teamCards)
         {
             var nonTrumpCards = legalCards.Where(c => !IsTrump(c)).ToList();
 
