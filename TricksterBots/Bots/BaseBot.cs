@@ -483,7 +483,7 @@ namespace Trickster.Bots
                 }
                 else
                 {
-                    //  we can't follow suit and don't have trump - try signaling a good suit (override TrySignalGoodSuit per game if needed)
+                    //  we can't follow suit and don't have trump - try signaling a good suit
                     suggestion = TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);
                 }
             }
