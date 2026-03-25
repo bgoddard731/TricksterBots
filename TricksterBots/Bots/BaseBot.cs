@@ -483,10 +483,8 @@ namespace Trickster.Bots
                 }
                 else
                 {
-                    //  we can't follow suit and don't have trump - game-specific discard priority, then try signaling a good suit
-                    suggestion = TryPrioritizeDiscardWhenVoidNoTrump(player, legalCards, cardsPlayed, isDefending);
-                    if (suggestion == null)
-                        suggestion = TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);
+                    //  we can't follow suit and don't have trump - try signaling a good suit (override TrySignalGoodSuit per game if needed)
+                    suggestion = TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);
                 }
             }
 
@@ -502,15 +500,6 @@ namespace Trickster.Bots
             return LowestCardFromWeakestSuit(legalCards, cardsPlayed);
         }
 
-
-        /// <summary>
-        ///     When void in the led suit and holding no trump, optionally choose a card to discard before partner signaling.
-        ///     Default: no priority (null).
-        /// </summary>
-        protected virtual Card TryPrioritizeDiscardWhenVoidNoTrump(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
-        {
-            return null;
-        }
 
         //  NOTE: If you're going to edit this in a game-specific way, copy the method to your bot and edit it there
         private Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
@@ -554,7 +543,7 @@ namespace Trickster.Bots
         }
 
         //  NOTE: If you're going to edit this in a game-specific way, copy the method to your bot and edit it there
-        private Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
+        protected virtual Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
         {
             //  don't signal when defending or playing an individual game
             if (isDefending || !IsPartnership)

@@ -11,13 +11,17 @@ namespace Trickster.Bots
         {
         }
 
-        protected override Card TryPrioritizeDiscardWhenVoidNoTrump(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
+        protected override Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
         {
-            if (trump != Suit.Unknown)
-                return null;
+            //  In no-trump, when void and not holding trump, slough lowest joker before partner signaling (jokers are dead in NT)
+            if (trump == Suit.Unknown && !legalCards.Any(IsTrump))
+            {
+                var jokers = legalCards.Where(c => c.suit == Suit.Joker).ToList();
+                if (jokers.Count > 0)
+                    return jokers.OrderBy(RankSort).First();
+            }
 
-            var jokers = legalCards.Where(c => c.suit == Suit.Joker).ToList();
-            return jokers.Count == 0 ? null : jokers.OrderBy(RankSort).First();
+            return base.TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);
         }
 
         public override BidBase SuggestBid(SuggestBidState<WhistOptions> state)
