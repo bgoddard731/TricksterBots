@@ -543,7 +543,7 @@ namespace Trickster.Bots
         }
 
         //  NOTE: If you're going to edit this in a game-specific way, copy the method to your bot and edit it there
-        private Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
+        protected virtual Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
         {
             //  don't signal when defending or playing an individual game
             if (isDefending || !IsPartnership)

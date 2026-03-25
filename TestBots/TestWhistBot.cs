@@ -68,6 +68,23 @@ namespace TestBots
         }
 
         [TestMethod]
+        public void SloughJokerFirstWhenVoidInNT()
+        {
+            var players = new[]
+            {
+                new TestPlayer(1561, "HJTD3D4S5S6D"),
+                new TestPlayer(1400),
+                new TestPlayer(1401),
+                new TestPlayer(1400)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, "2C", trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual(Suit.Joker, suggestion.suit, $"Suggested {suggestion.StdNotation} should be a Joker when void in NT");
+        }
+
+        [TestMethod]
         public void SignalGoodSuitOnFirstSlough_Lead()
         {
             var players = new[]
