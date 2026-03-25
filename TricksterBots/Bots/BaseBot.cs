@@ -513,7 +513,7 @@ namespace Trickster.Bots
         }
 
         //  NOTE: If you're going to edit this in a game-specific way, copy the method to your bot and edit it there
-        protected virtual Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
+        private Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
         {
             var nonTrumpCards = legalCards.Where(c => !IsTrump(c)).ToList();
 

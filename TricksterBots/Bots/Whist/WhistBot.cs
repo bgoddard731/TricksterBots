@@ -20,18 +20,6 @@ namespace Trickster.Bots
             return jokers.Count == 0 ? null : jokers.OrderBy(RankSort).First();
         }
 
-        protected override Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
-        {
-            if (trump == Suit.Unknown)
-            {
-                var jokers = legalCards.Where(c => c.suit == Suit.Joker).ToList();
-                if (jokers.Count > 0)
-                    return jokers.OrderBy(RankSort).First();
-            }
-
-            return base.LowestCardFromWeakestSuit(legalCards, cardsPlayed);
-        }
-
         public override BidBase SuggestBid(SuggestBidState<WhistOptions> state)
         {
             var hand = state.hand;
