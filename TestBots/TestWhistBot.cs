@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Trickster.Bots;
 using Trickster.cloud;
@@ -118,6 +118,23 @@ namespace TestBots
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Clubs);
             var suggestion = bot.SuggestNextCard(cardState);
             Assert.AreEqual("3D", suggestion.ToString(), $"Suggested {suggestion.StdNotation} is suit sloughed by partner");
+        }
+
+        [TestMethod]
+        public void SloughLoserInPartnerGoodSuitFirst_NT()
+        {
+            var players = new[]
+            {
+                new TestPlayer(1561, "5D3H9S8S"),
+                new TestPlayer(1400),
+                new TestPlayer(1401) { GoodSuit = Suit.Diamonds },
+                new TestPlayer(1400)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, "2C", trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("5D", suggestion.ToString(), "Prefer shedding a non-winner in partner's GoodSuit over a lower card in another suit");
         }
 
         [TestMethod]

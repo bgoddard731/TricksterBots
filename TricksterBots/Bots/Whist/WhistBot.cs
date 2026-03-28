@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Trickster.cloud;
@@ -9,6 +9,24 @@ namespace Trickster.Bots
     {
         public WhistBot(WhistOptions options, Suit trumpSuit) : base(options, trumpSuit)
         {
+        }
+
+        protected override Card LowestCardFromWeakestSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, PlayersCollectionBase players, bool isDefending)
+        {
+            //  NT: shed non-winners in partner's introduced suit (GoodSuit) before other suits (issue #303)
+            if (trump == Suit.Unknown && IsPartnership && !isDefending)
+            {
+                var partnerSuit = players.PartnersOf(player).FirstOrDefault(p => p.GoodSuit != Suit.Unknown)?.GoodSuit ?? Suit.Unknown;
+                if (partnerSuit != Suit.Unknown)
+                {
+                    var inPartnerSuit = legalCards.Where(c => EffectiveSuit(c) == partnerSuit).OrderBy(RankSort).ToList();
+                    var loser = inPartnerSuit.FirstOrDefault(c => !IsCardHigh(c, cardsPlayed));
+                    if (loser != null)
+                        return loser;
+                }
+            }
+
+            return base.LowestCardFromWeakestSuit(player, legalCards, cardsPlayed, players, isDefending);
         }
 
         protected override Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
