@@ -507,12 +507,12 @@ namespace Trickster.Bots
                 return legalCards.OrderBy(RankSort).First();
 
             //  else, dump the lowest card from the weakest suit
-            return LowestCardFromWeakestSuit(player, legalCards, cardsPlayed, players, isDefending);
+            return LowestCardFromWeakestSuit(legalCards, cardsPlayed);
         }
 
 
-        //  NOTE: If you're going to edit this in a game-specific way, override it in your bot
-        protected virtual Card LowestCardFromWeakestSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, PlayersCollectionBase players, bool isDefending)
+        //  NOTE: If you're going to edit this in a game-specific way, copy the method to your bot and edit it there
+        private Card LowestCardFromWeakestSuit(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
         {
             var nonTrumpCards = legalCards.Where(c => !IsTrump(c)).ToList();
 
