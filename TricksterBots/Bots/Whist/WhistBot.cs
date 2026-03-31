@@ -14,8 +14,8 @@ namespace Trickster.Bots
         protected override Card TryLeadTowardPartnerIntroducedSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed,
             PlayersCollectionBase players, bool isDefending, IReadOnlyList<Card> bossCards)
         {
-            //  Bid Whist only: come back in partner's suit (void signal and/or auction) before cashing a boss elsewhere (issue #303)
-            if (options.variation != WhistVariation.BidWhist || isDefending)
+            //  come back in partner's suit (void signal and/or auction) before cashing a boss elsewhere
+            if (isDefending)
                 return null;
 
             var partnerSuit = PartnerIntroducedSuitFromAuctionAndSignal(player, players);
