@@ -11,22 +11,47 @@ namespace Trickster.Bots
         {
         }
 
-        protected override Card LowestCardFromWeakestSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, PlayersCollectionBase players, bool isDefending)
+        protected override Card TryLeadTowardPartnerIntroducedSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed,
+            PlayersCollectionBase players, bool isDefending, IReadOnlyList<Card> bossCards)
         {
-            //  NT: shed non-winners in partner's introduced suit (GoodSuit) before other suits (issue #303)
-            if (trump == Suit.Unknown && IsPartnership && !isDefending)
+            //  Bid Whist only: come back in partner's suit (void signal and/or auction) before cashing a boss elsewhere (issue #303)
+            if (options.variation != WhistVariation.BidWhist || isDefending)
+                return null;
+
+            var partnerSuit = PartnerIntroducedSuitFromAuctionAndSignal(player, players);
+            if (partnerSuit == Suit.Unknown || !legalCards.Any(c => EffectiveSuit(c) == partnerSuit))
+                return null;
+
+            var loserInPartnerSuit = legalCards.Where(c => EffectiveSuit(c) == partnerSuit && !IsCardHigh(c, cardsPlayed)).OrderBy(RankSort).FirstOrDefault();
+            if (loserInPartnerSuit != null)
+                return loserInPartnerSuit;
+            if (bossCards.Any(c => EffectiveSuit(c) == partnerSuit))
+                return bossCards.First(c => EffectiveSuit(c) == partnerSuit);
+
+            return null;
+        }
+
+        private Suit PartnerIntroducedSuitFromAuctionAndSignal(PlayerBase player, PlayersCollectionBase players)
+        {
+            var partner = players.PartnersOf(player).FirstOrDefault();
+            if (partner == null)
+                return Suit.Unknown;
+
+            var suit = partner.GoodSuit;
+            if (suit != Suit.Unknown && suit != trump)
+                return suit;
+
+            foreach (var bidInt in partner.BidHistory)
             {
-                var partnerSuit = players.PartnersOf(player).FirstOrDefault(p => p.GoodSuit != Suit.Unknown)?.GoodSuit ?? Suit.Unknown;
-                if (partnerSuit != Suit.Unknown)
-                {
-                    var inPartnerSuit = legalCards.Where(c => EffectiveSuit(c) == partnerSuit).OrderBy(RankSort).ToList();
-                    var loser = inPartnerSuit.FirstOrDefault(c => !IsCardHigh(c, cardsPlayed));
-                    if (loser != null)
-                        return loser;
-                }
+                var wb = new WhistBid(bidInt);
+                if (!wb.IsDeclareBid)
+                    continue;
+                var s = wb.Suit;
+                if (s != Suit.Unknown && s != Suit.Joker && SuitRank.stdSuits.Contains(s))
+                    return s;
             }
 
-            return base.LowestCardFromWeakestSuit(player, legalCards, cardsPlayed, players, isDefending);
+            return Suit.Unknown;
         }
 
         protected override Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)

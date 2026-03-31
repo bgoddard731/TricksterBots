@@ -315,6 +315,13 @@ namespace Trickster.Bots
             return options.RankSort(c, trumpSuit);
         }
 
+        //  Override in game-specific bots that need it
+        protected virtual Card TryLeadTowardPartnerIntroducedSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed,
+            PlayersCollectionBase players, bool isDefending, IReadOnlyList<Card> bossCards)
+        {
+            return null;
+        }
+
         //  NOTE: If you're going to edit this in a game-specific way, copy the method to your bot and edit it there
         protected Card TryTakeEm(PlayerBase player, IReadOnlyList<Card> trick, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed,
             PlayersCollectionBase players, bool isPartnerTakingTrick,
@@ -393,12 +400,15 @@ namespace Trickster.Bots
                 var cards = legalCards;
                 var bossCards = legalCards.Where(c => IsCardHigh(c, cardsPlayed))
                     .OrderByDescending(c => cards.Count(c1 => EffectiveSuit(c1) == EffectiveSuit(c))).ToList();
-                if (bossCards.Count > 0)
+
+                suggestion = TryLeadTowardPartnerIntroducedSuit(player, legalCards, cardsPlayed, players, isDefending, bossCards);
+
+                if (suggestion == null && bossCards.Count > 0)
                 {
                     //  consider leading our "boss" cards favoring boss in our longest suit
                     suggestion = bossCards.First();
                 }
-                else if (legalCards.Any(c => EffectiveSuit(c) == goodSuitForPartner))
+                else if (suggestion == null && legalCards.Any(c => EffectiveSuit(c) == goodSuitForPartner))
                 {
                     //  partner has signaled a "good suit", lead low in it
                     suggestion = legalCards.OrderBy(RankSort).First(c => EffectiveSuit(c) == goodSuitForPartner);

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Trickster.Bots;
 using Trickster.cloud;
@@ -121,20 +122,38 @@ namespace TestBots
         }
 
         [TestMethod]
-        public void SloughLoserInPartnerGoodSuitFirst_NT()
+        public void LeadBackPartnerGoodSuit_NT()
         {
             var players = new[]
             {
-                new TestPlayer(1561, "5D3H9S8S"),
-                new TestPlayer(1400),
-                new TestPlayer(1401) { GoodSuit = Suit.Diamonds },
-                new TestPlayer(1400)
+                new TestPlayer(1561, "5D3H9S8S", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2) { GoodSuit = Suit.Diamonds },
+                new TestPlayer(1400, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
-            var cardState = new TestCardState<WhistOptions>(bot, players, "2C", trumpSuit: Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
             var suggestion = bot.SuggestNextCard(cardState);
-            Assert.AreEqual("5D", suggestion.ToString(), "Prefer shedding a non-winner in partner's GoodSuit over a lower card in another suit");
+            Assert.AreEqual("5D", suggestion.ToString(), "Come back in partner's suit before a lower card in another suit");
+        }
+
+        [TestMethod]
+        public void LeadBackPartnerBidSuit_NT()
+        {
+            var partnerHeartBid = new WhistBid(Suit.Hearts, 3, true, false);
+            var players = new[]
+            {
+                new TestPlayer(1561, "H8ST", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(BidBase.NoBid, "HKT9", seat: 2) { BidHistory = new List<int> { partnerHeartBid } },
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("H8", suggestion.ToString(), "Lead back in partner's auction suit before a boss in another suit");
         }
 
         [TestMethod]
