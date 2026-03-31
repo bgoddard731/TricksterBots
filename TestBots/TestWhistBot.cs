@@ -144,16 +144,17 @@ namespace TestBots
             var partnerHeartBid = new WhistBid(Suit.Hearts, 3, true, false);
             var players = new[]
             {
-                new TestPlayer(1561, "H8ST", seat: 0),
+                //  Our hand has a boss elsewhere (AS) but a non-boss in partner's suit (8H).
+                new TestPlayer(1561, "8HAS", seat: 0),
                 new TestPlayer(1400, seat: 1),
-                new TestPlayer(BidBase.NoBid, "HKT9", seat: 2) { BidHistory = new List<int> { partnerHeartBid } },
+                new TestPlayer(BidBase.NoBid, seat: 2) { BidHistory = new List<int> { partnerHeartBid } },
                 new TestPlayer(1400, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
             var suggestion = bot.SuggestNextCard(cardState);
-            Assert.AreEqual("H8", suggestion.ToString(), "Lead back in partner's auction suit before a boss in another suit");
+            Assert.AreEqual("8H", suggestion.ToString(), "Lead back in partner's auction suit before a boss in another suit");
         }
 
         [TestMethod]
