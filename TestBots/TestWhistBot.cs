@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Trickster.Bots;
@@ -155,6 +155,24 @@ namespace TestBots
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
             var suggestion = bot.SuggestNextCard(cardState);
             Assert.AreEqual("8H", suggestion.ToString(), "Lead back in partner's auction suit before a boss in another suit");
+        }
+
+        [TestMethod]
+        public void LeadBackSuitPartnerTriedToPromote_NT()
+        {
+            var players = new[]
+            {
+                //  Our hand has a boss elsewhere (AS) but a non-boss in the suit partner appears to be promoting (8H).
+                new TestPlayer(1561, "8HAS", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2) { PlayedCards = new List<PlayedCard> { new PlayedCard(new Card("3H"), new Card("4S")) } },
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("8H", suggestion.ToString(), "Lead back in suit partner appeared to promote before a boss in another suit");
         }
 
         [TestMethod]

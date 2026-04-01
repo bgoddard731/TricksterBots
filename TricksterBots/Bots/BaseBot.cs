@@ -402,13 +402,16 @@ namespace Trickster.Bots
                     .OrderByDescending(c => cards.Count(c1 => EffectiveSuit(c1) == EffectiveSuit(c))).ToList();
 
                 suggestion = TryLeadTowardPartnerIntroducedSuit(player, legalCards, cardsPlayed, players, isDefending, bossCards);
-
-                if (suggestion == null && bossCards.Count > 0)
+                if (suggestion != null)
+                {
+                    return suggestion;
+                }
+                else if (bossCards.Count > 0)
                 {
                     //  consider leading our "boss" cards favoring boss in our longest suit
                     suggestion = bossCards.First();
                 }
-                else if (suggestion == null && legalCards.Any(c => EffectiveSuit(c) == goodSuitForPartner))
+                else if (legalCards.Any(c => EffectiveSuit(c) == goodSuitForPartner))
                 {
                     //  partner has signaled a "good suit", lead low in it
                     suggestion = legalCards.OrderBy(RankSort).First(c => EffectiveSuit(c) == goodSuitForPartner);

@@ -16,9 +16,26 @@ namespace Trickster.Bots
         {
             //  come back in partner's suit (void signal and/or auction) before cashing a boss elsewhere
             if (isDefending)
+            {
                 return null;
+            }
 
-            var partnerSuit = PartnerIntroducedSuitFromAuctionAndSignal(player, players);
+            //  If we already have enough "boss" cards left to make our team's bid,
+            //  just let them play out rather than trying to come back in partner's suit.
+            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
+            if (declarer != null)
+            {
+                var contract = new WhistBid(declarer.Bid);
+                var partner = players.PartnerOf(declarer);
+                var tricksTaken = declarer.CardsTaken.Length / 8;
+                if (partner != null)
+                    tricksTaken += partner.CardsTaken.Length / 8;
+
+                if (tricksTaken + bossCards.Count >= contract.Tricks)
+                    return null;
+            }
+
+            var partnerSuit = PartnerIntroducedSuitFromAuctionAndSignal(player, players, cardsPlayed);
             if (partnerSuit == Suit.Unknown || !legalCards.Any(c => EffectiveSuit(c) == partnerSuit))
                 return null;
 
@@ -31,7 +48,7 @@ namespace Trickster.Bots
             return null;
         }
 
-        private Suit PartnerIntroducedSuitFromAuctionAndSignal(PlayerBase player, PlayersCollectionBase players)
+        private Suit PartnerIntroducedSuitFromAuctionAndSignal(PlayerBase player, PlayersCollectionBase players, IReadOnlyList<Card> cardsPlayed)
         {
             var partner = players.PartnersOf(player).FirstOrDefault();
             if (partner == null)
@@ -40,6 +57,29 @@ namespace Trickster.Bots
             var suit = partner.GoodSuit;
             if (suit != Suit.Unknown && suit != trump)
                 return suit;
+
+
+            if (trump == Suit.Unknown)
+            {
+                //  Try to infer a suit partner is trying to promote by looking at suits where
+                //  they have played a non-boss card in the play history.
+                var playedCards = partner.PlayedCards;
+                if (playedCards != null && playedCards.Any())
+                {
+                    var knownCards = cardsPlayed.Concat(new Hand(player.Hand));
+
+                    var candidateSuit = playedCards
+                        .Where(pc => pc.CardPlayed != null)
+                        .Where(pc => !IsCardHigh(pc.CardPlayed, knownCards))
+                        .Select(pc => EffectiveSuit(pc.CardPlayed))
+                        .FirstOrDefault(s => s != Suit.Unknown && s != Suit.Joker);
+
+                    if (candidateSuit != Suit.Unknown)
+                        return candidateSuit;
+                }
+
+                return Suit.Unknown;
+            }
 
             foreach (var bidInt in partner.BidHistory)
             {
