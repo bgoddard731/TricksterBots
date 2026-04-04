@@ -206,10 +206,19 @@ namespace Trickster.Bots
             var bid = new WhistBid(state.player.Bid);
             var legalCards = state.legalCards;
 
-            // Avoid leading Jokers in NT
-            if (state.trick.Count == 0 && state.trumpSuit == Suit.Unknown && legalCards.Any(c => c.suit == Suit.Joker) && legalCards.Any(c => c.suit != Suit.Joker))
-            {
-                legalCards = legalCards.Where(c => c.suit != Suit.Joker).ToList();
+            // Avoid leading Jokers or suits partner is known to be void in in NT
+            if (state.trick.Count == 0 && state.trumpSuit == Suit.Unknown) {
+                if (legalCards.Any(c => c.suit == Suit.Joker) && legalCards.Any(c => c.suit != Suit.Joker))
+                {
+                    legalCards = legalCards.Where(c => c.suit != Suit.Joker).ToList();
+                }
+                var players = new PlayersCollectionBase(this, state.players);
+                var avoidPartnerVoidSuits = SuitRank.stdSuits.Where(s =>
+                    players.PartnerIsVoidInSuit(state.player, new Card(s, Rank.Ace), state.cardsPlayed)).ToList();
+                if (avoidPartnerVoidSuits.Count > 0)
+                {
+                    legalCards = legalCards.Where(c => !avoidPartnerVoidSuits.Contains(EffectiveSuit(c))).ToList();
+                }
             }
 
             return TryTakeEm(state.player,
