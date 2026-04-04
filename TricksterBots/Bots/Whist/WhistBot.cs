@@ -121,7 +121,7 @@ namespace Trickster.Bots
             var bid = new WhistBid(state.player.Bid);
             var legalCards = state.legalCards;
 
-            // Avoid leading Jokers or suits partner is known to be void in in NT
+            // Avoid leading Jokers or suits partner is known to be void in NT
             if (state.trick.Count == 0 && state.trumpSuit == Suit.Unknown) {
                 if (legalCards.Any(c => c.suit == Suit.Joker) && legalCards.Any(c => c.suit != Suit.Joker))
                 {
