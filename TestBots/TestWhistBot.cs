@@ -68,6 +68,26 @@ namespace TestBots
         }
 
         [TestMethod]
+        public void DontLeadPartnerVoidSuitInNT_WhenAlternativeExists()
+        {
+            // Partner is known void in hearts (e.g. from earlier play); leader can lead hearts or diamonds — prefer diamonds (issue #146).
+            var partner = new TestPlayer(1400, "");
+            partner.VoidSuits.Add(Suit.Hearts);
+            var players = new[]
+            {
+                new TestPlayer(1400, "2H3D"),
+                new TestPlayer(1561),
+                partner,
+                new TestPlayer(1401)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual(Suit.Diamonds, suggestion.suit, "Should not lead a suit partner is known to be void in");
+        }
+
+        [TestMethod]
         public void SloughJokerFirstWhenVoidInNT()
         {
             var players = new[]
