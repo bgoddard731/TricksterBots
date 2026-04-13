@@ -91,7 +91,7 @@ namespace TestBots
         [TestMethod]
         public void MayLeadBossInPartnerVoidSuitInNT_WhenItWinsTheTrick()
         {
-            // Partner is void in hearts; we still allow leading the top remaining heart (boss) to cash a trick.
+            // Partner is void in hearts; we still allow leading the top remaining heart to cash a trick.
             var partner = new TestPlayer(1400, "");
             partner.VoidSuits.Add(Suit.Hearts);
             var players = new[]
