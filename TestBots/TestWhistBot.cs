@@ -146,13 +146,16 @@ namespace TestBots
                 //  Our hand has a boss elsewhere (AS) but a non-boss in the suit partner appears to be promoting (8H).
                 new TestPlayer(1561, "8HAS", seat: 0),
                 new TestPlayer(1400, seat: 1),
-                //  PlayedCard(trickHigh, myPlay): partner's card is 3H (non-boss), promoting hearts
-                new TestPlayer(1401, seat: 2) { PlayedCards = new List<PlayedCard> { new PlayedCard(new Card("KH"), new Card("3H")) } },
+                //  Partner (seat 2) led 3H; KH later in the trick is higher in the lead suit (promoting hearts).
+                new TestPlayer(1401, seat: 2),
                 new TestPlayer(1400, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
-            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown)
+            {
+                cardsPlayedInOrder = "23H32H0AS1KH"
+            };
             var suggestion = bot.SuggestNextCard(cardState);
             Assert.AreEqual("8H", suggestion.ToString(), "Lead back in suit partner appeared to promote before a boss in another suit");
         }
