@@ -89,6 +89,26 @@ namespace TestBots
         }
 
         [TestMethod]
+        public void MayLeadBossInPartnerVoidSuitInNT_WhenItWinsTheTrick()
+        {
+            // Partner is void in hearts; we still allow leading the top remaining heart (boss) to cash a trick.
+            var partner = new TestPlayer(1400, "");
+            partner.VoidSuits.Add(Suit.Hearts);
+            var players = new[]
+            {
+                new TestPlayer(1400, "AH3D", cardsTaken: ""),
+                new TestPlayer(1561, "", cardsTaken: "2H3H4H5H6H7H8H9HTHJHQHKH"),
+                partner,
+                new TestPlayer(1401)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("AH", suggestion.ToString(), "Boss heart should remain a legal lead even if partner is void in hearts");
+        }
+
+        [TestMethod]
         public void SloughJokerFirstWhenVoidInNT()
         {
             var players = new[]

@@ -217,7 +217,10 @@ namespace Trickster.Bots
                     players.PartnerIsVoidInSuit(state.player, new Card(s, Rank.Ace), state.cardsPlayed)).ToList();
                 if (avoidPartnerVoidSuits.Count > 0)
                 {
-                    legalCards = legalCards.Where(c => !avoidPartnerVoidSuits.Contains(EffectiveSuit(c))).ToList();
+                    var withoutPartnerVoidLead = legalCards.Where(c =>
+                        !avoidPartnerVoidSuits.Contains(EffectiveSuit(c)) || IsCardHigh(c, state.cardsPlayed)).ToList();
+                    if (withoutPartnerVoidLead.Count > 0)
+                        legalCards = withoutPartnerVoidLead;
                 }
             }
 
