@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Trickster.Bots;
 using Trickster.cloud;
@@ -118,6 +119,70 @@ namespace TestBots
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Clubs);
             var suggestion = bot.SuggestNextCard(cardState);
             Assert.AreEqual("3D", suggestion.ToString(), $"Suggested {suggestion.StdNotation} is suit sloughed by partner");
+        }
+
+        [TestMethod]
+        public void LeadBackPartnerGoodSuit_NT()
+        {
+            var players = new[]
+            {
+                new TestPlayer(1561, "5D3H9S8S", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2) { GoodSuit = Suit.Diamonds },
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("5D", suggestion.ToString(), "Come back in partner's suit before a lower card in another suit");
+        }
+
+        [TestMethod]
+        public void LeadBackSuitPartnerTriedToPromote_NT()
+        {
+            var players = new[]
+            {
+                //  Our hand has a boss elsewhere (AS) but a non-boss in the suit partner appears to be promoting (8H).
+                new TestPlayer(1561, "8HAS", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                //  Partner (seat 2) led 3H; KH later in the trick is higher in the lead suit (promoting hearts).
+                new TestPlayer(1401, seat: 2),
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown)
+            {
+                cardsPlayedInOrder = "23H32H0AS1KH"
+            };
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("8H", suggestion.ToString(), "Lead back in suit partner appeared to promote before a boss in another suit");
+        }
+
+        [TestMethod]
+        public void SkipLeadTowardPartnerWhenBossCardsCoverRemainingContract_NT()
+        {
+            var partnerHeartBid = new WhistBid(Suit.Hearts, 3, true, false);
+            //  Declarer bid must match a 7-trick contract so that tricks already won (6) plus one boss covers the bid.
+            var declarerNt7Tricks = (int)new WhistBid(Suit.Unknown, 1, true, false);
+            //  Six tricks already won by declarer + partner; contract is 7. One boss (AS) is enough to cover the last trick,
+            //  so we skip leading back toward partner's auction suit and cash a boss instead.
+            //  24 cards (48 chars) = 6 tricks; must be an even-length card string for Hand parsing
+            var sixTricksWon =
+                "2C3C4C5C6C7C8C9CTCJCQCKCAC2D3D4D5D6D7D8D9DTDJD";
+            var players = new[]
+            {
+                new TestPlayer(declarerNt7Tricks, "8HAS", seat: 0) { CardsTaken = sixTricksWon },
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(BidBase.NoBid, seat: 2) { BidHistory = new List<int> { partnerHeartBid } },
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("AS", suggestion.ToString(), "Cash boss when tricks already won plus bosses meet the contract");
         }
 
         [TestMethod]

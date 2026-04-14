@@ -11,6 +11,91 @@ namespace Trickster.Bots
         {
         }
 
+        protected override Card TryLeadTowardPartnerIntroducedSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed,
+            PlayersCollectionBase players, bool isDefending, IReadOnlyList<Card> bossCards, string cardsPlayedInOrder = null)
+        {
+            //  come back in partner's suit (void signal and/or auction) before cashing a boss elsewhere
+            if (isDefending)
+            {
+                return null;
+            }
+
+            //  If we already have enough "boss" cards left to make our team's bid,
+            //  just let them play out rather than trying to come back in partner's suit.
+            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
+            if (declarer != null)
+            {
+                var contract = new WhistBid(declarer.Bid);
+                var partner = players.PartnerOf(declarer);
+                var tricksTaken = declarer.CardsTaken.Length / 8;
+                if (partner != null)
+                    tricksTaken += partner.CardsTaken.Length / 8;
+
+                if (tricksTaken + bossCards.Count >= contract.Tricks)
+                    return null;
+            }
+
+            var partnerSuit = PartnerIntroducedSuitFromAuctionAndSignal(player, players, cardsPlayed, cardsPlayedInOrder);
+            if (partnerSuit == Suit.Unknown || !legalCards.Any(c => EffectiveSuit(c) == partnerSuit))
+                return null;
+
+            var loserInPartnerSuit = legalCards.Where(c => EffectiveSuit(c) == partnerSuit && !IsCardHigh(c, cardsPlayed)).OrderBy(RankSort).FirstOrDefault();
+            if (loserInPartnerSuit != null)
+                return loserInPartnerSuit;
+            if (bossCards.Any(c => EffectiveSuit(c) == partnerSuit))
+                return bossCards.First(c => EffectiveSuit(c) == partnerSuit);
+
+            return null;
+        }
+
+        private Suit PartnerIntroducedSuitFromAuctionAndSignal(PlayerBase player, PlayersCollectionBase players, IReadOnlyList<Card> cardsPlayed,
+            string cardsPlayedInOrder)
+        {
+            var partner = players.PartnersOf(player).FirstOrDefault();
+            if (partner == null)
+                return Suit.Unknown;
+
+            var suit = partner.GoodSuit;
+            if (suit != Suit.Unknown && suit != trump)
+                return suit;
+
+
+            if (trump == Suit.Unknown)
+            {
+                //  Infer a suit partner is promoting: walk completed tricks (newest first) and find
+                //  one where partner led and their lead was not the highest card of the lead suit in that trick.
+                var playedOrder = cardsPlayedInOrder;
+                if (!string.IsNullOrEmpty(playedOrder))
+                {
+                    var ordered = GetCardsPlayedInOrder(playedOrder);
+                    if (ordered.Count > 0 && ordered.All(sc => sc.seat >= 0 && sc.seat < players.Count))
+                    {
+                        var tricks = GetCardsPlayedByTrick(playedOrder, players.Count);
+                        for (var t = tricks.Count - 1; t >= 0; t--)
+                        {
+                            var trick = tricks[t];
+                            if (trick.Count == 0 || trick[0].seat != partner.Seat)
+                                continue;
+
+                            var leadCard = trick[0].card;
+                            var leadSuit = EffectiveSuit(leadCard);
+                            if (leadSuit == Suit.Unknown || leadSuit == Suit.Joker)
+                                continue;
+
+                            var maxRankInLeadSuit = trick
+                                .Where(sc => EffectiveSuit(sc.card) == leadSuit)
+                                .Max(sc => RankSort(sc.card));
+
+                            if (RankSort(leadCard) < maxRankInLeadSuit)
+                                return leadSuit;
+                        }
+                    }
+                }
+            }
+
+            return Suit.Unknown;
+        }
+
         protected override Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
         {
             //  In no-trump, slough jokers before signaling a good suit (jokers are dead in NT)
@@ -134,7 +219,8 @@ namespace Trickster.Bots
                 new PlayersCollectionBase(this, state.players),
                 state.isPartnerTakingTrick,
                 state.cardTakingTrick,
-                !bid.IsDeclareBid && !bid.IsDeclarePartnerBid);
+                !bid.IsDeclareBid && !bid.IsDeclarePartnerBid,
+                state.cardsPlayedInOrder);
         }
 
         public override List<Card> SuggestPass(SuggestPassState<WhistOptions> state)
