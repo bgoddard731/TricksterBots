@@ -109,6 +109,34 @@ namespace TestBots
         }
 
         [TestMethod]
+        public void NT_OpeningLead_TryTakeEmCannotLeadNonBossFromPartnerVoidSuit()
+        {
+            // Regression for PR #377: legalCards is narrowed before TryTakeEm so non-boss hearts are removed
+            // when partner is known void. TryTakeEm only draws from that list (including LowestCardFromWeakestSuit),
+            // so it must never return 5H even though 5H is in the physical hand.
+            var partner = new TestPlayer(1400, "");
+            partner.VoidSuits.Add(Suit.Hearts);
+            var players = new[]
+            {
+                new TestPlayer(1400, "AH5H9D2D", cardsTaken: ""),
+                new TestPlayer(1561, "", cardsTaken: "2H3H4H6H7H8H"),
+                partner,
+                new TestPlayer(1401, "", cardsTaken: "9HTHJHQHKH")
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+
+            Assert.AreNotEqual(
+                "5H",
+                suggestion.ToString(),
+                "Non-boss heart must be filtered out before TryTakeEm; otherwise dumping logic could lead it from a partner-void suit");
+            if (suggestion.suit == Suit.Hearts)
+                Assert.AreEqual(Rank.Ace, suggestion.rank, "Only the boss heart should remain playable in hearts for this layout");
+        }
+
+        [TestMethod]
         public void SloughJokerFirstWhenVoidInNT()
         {
             var players = new[]
