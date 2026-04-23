@@ -38,14 +38,13 @@ namespace Trickster.Bots
             var partnerSuit = PartnerIntroducedSuitFromAuctionAndSignal(player, players, cardsPlayed, cardsPlayedInOrder);
             if (partnerSuit == Suit.Unknown || !legalCards.Any(c => EffectiveSuit(c) == partnerSuit))
                 return null;
-
-            var loserInPartnerSuit = legalCards.Where(c => EffectiveSuit(c) == partnerSuit && !IsCardHigh(c, cardsPlayed)).OrderBy(RankSort).FirstOrDefault();
-            if (loserInPartnerSuit != null)
-                return loserInPartnerSuit;
-            if (bossCards.Any(c => EffectiveSuit(c) == partnerSuit))
-                return bossCards.First(c => EffectiveSuit(c) == partnerSuit);
-
-            return null;
+            
+            // If we have cards in the partner's suit, lead the highest card in that suit to indicate
+            // to partner what our hand looks like.
+            return legalCards
+                .Where(c => EffectiveSuit(c) == partnerSuit)
+                .OrderByDescending(RankSort)
+                .FirstOrDefault();
         }
 
         private Suit PartnerIntroducedSuitFromAuctionAndSignal(PlayerBase player, PlayersCollectionBase players, IReadOnlyList<Card> cardsPlayed,

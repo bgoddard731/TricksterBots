@@ -186,7 +186,7 @@ namespace TestBots
             var bot = GetBot(Suit.Clubs);
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Clubs);
             var suggestion = bot.SuggestNextCard(cardState);
-            Assert.AreEqual("3D", suggestion.ToString(), $"Suggested {suggestion.StdNotation} is suit sloughed by partner");
+            Assert.AreEqual("4D", suggestion.ToString(), $"Suggested {suggestion.StdNotation} is highest card in suit sloughed by partner");
         }
 
         [TestMethod]
@@ -194,7 +194,7 @@ namespace TestBots
         {
             var players = new[]
             {
-                new TestPlayer(1561, "5D3H9S8S", seat: 0),
+                new TestPlayer(1561, "5D9DAS3H", seat: 0),
                 new TestPlayer(1400, seat: 1),
                 new TestPlayer(1401, seat: 2) { GoodSuit = Suit.Diamonds },
                 new TestPlayer(1400, seat: 3)
@@ -203,7 +203,7 @@ namespace TestBots
             var bot = GetBot(Suit.Unknown);
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
             var suggestion = bot.SuggestNextCard(cardState);
-            Assert.AreEqual("5D", suggestion.ToString(), "Come back in partner's suit before a lower card in another suit");
+            Assert.AreEqual("9D", suggestion.ToString(), "Come back in partner's suit with the highest card before an off-suit boss");
         }
 
         [TestMethod]
@@ -211,8 +211,8 @@ namespace TestBots
         {
             var players = new[]
             {
-                //  Our hand has a boss elsewhere (AS) but a non-boss in the suit partner appears to be promoting (8H).
-                new TestPlayer(1561, "8HAS", seat: 0),
+                //  Our hand has a boss elsewhere (AS) and multiple hearts in the suit partner appears to be promoting.
+                new TestPlayer(1561, "3H8HAS", seat: 0),
                 new TestPlayer(1400, seat: 1),
                 //  Partner (seat 2) led 3H; KH later in the trick is higher in the lead suit (promoting hearts).
                 new TestPlayer(1401, seat: 2),
@@ -225,7 +225,42 @@ namespace TestBots
                 cardsPlayedInOrder = "23H32H0AS1KH"
             };
             var suggestion = bot.SuggestNextCard(cardState);
-            Assert.AreEqual("8H", suggestion.ToString(), "Lead back in suit partner appeared to promote before a boss in another suit");
+            Assert.AreEqual("8H", suggestion.ToString(), "Lead highest back in suit partner appeared to promote before a boss in another suit");
+        }
+
+        [TestMethod]
+        public void LeadBackPartnerPromotedSuitAgainBeforeOtherBoss_NT()
+        {
+            var firstLeadPlayers = new[]
+            {
+                new TestPlayer(1561, "8HQHAS", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2),
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var firstLeadState = new TestCardState<WhistOptions>(bot, firstLeadPlayers, trumpSuit: Suit.Unknown)
+            {
+                cardsPlayedInOrder = "23H32H0AS1KH"
+            };
+            var firstSuggestion = bot.SuggestNextCard(firstLeadState);
+            Assert.AreEqual("QH", firstSuggestion.ToString(), "First lead should be the highest card in partner's promoted suit");
+
+            var secondLeadPlayers = new[]
+            {
+                new TestPlayer(1561, "8HAS", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2),
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var secondLeadState = new TestCardState<WhistOptions>(bot, secondLeadPlayers, trumpSuit: Suit.Unknown)
+            {
+                cardsPlayedInOrder = "23H32H0AS1KH"
+            };
+            var secondSuggestion = bot.SuggestNextCard(secondLeadState);
+            Assert.AreEqual("8H", secondSuggestion.ToString(), "If still on lead, continue with highest remaining card in partner's suit before off-suit boss cards");
         }
 
         [TestMethod]
