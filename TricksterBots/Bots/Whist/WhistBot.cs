@@ -96,11 +96,62 @@ namespace Trickster.Bots
             return Suit.Unknown;
         }
 
+        //  NT slough helper with some logic based on base bot's LowestCardFromWeakestSuit: pick a low discard from a weak suit.
+        private Card LowestCardFromWeakestSuitNT(IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed)
+        {
+            var cards = legalCards as IList<Card> ?? legalCards.ToList();
+
+            var suitCounts = cards.GroupBy(EffectiveSuit).Select(g => new { suit = g.Key, count = g.Count() }).ToList();
+
+            //  try to ditch a singleton that's not "boss" and whose suit has the most outstanding cards
+            var bestSingletonSuitCount = suitCounts.Where(sc => sc.count == 1)
+                .Where(sc => !IsCardHigh(cards.Single(c => EffectiveSuit(c) == sc.suit), cardsPlayed))
+                .OrderBy(sc => cardsPlayed.Count(c => EffectiveSuit(c) == sc.suit)).FirstOrDefault();
+
+            if (bestSingletonSuitCount != null)
+                return cards.Single(c => EffectiveSuit(c) == bestSingletonSuitCount.suit);
+
+            //  now we look at doubletons in the order of the number of remaining cards in the suit
+            var doubletonSuitCounts = suitCounts.Where(sc => sc.count == 2).OrderBy(sc => cardsPlayed.Count(c => EffectiveSuit(c) == sc.suit)).ToList();
+
+            foreach (var sc in doubletonSuitCounts)
+            {
+                var suitCards = cards.Where(c => EffectiveSuit(c) == sc.suit).OrderBy(RankSort).ToList();
+
+                //  High is boss and low isn't "touching" it in suit order (honors / adjacent strength)
+                if (IsCardHigh(suitCards[1], cardsPlayed) && !AreCardsEquivalent(suitCards[0], suitCards[1], cardsPlayed))
+                    return suitCards[0];
+
+                //  Don't pitch the low if either card is the unique second-top in the suit (e.g. king under ace) for high or low contracts
+                if (!suitCards.Any(c => HasSoleUnplayedCardStrictlyAbove(c, cardsPlayed)))
+                    return suitCards[0];
+            }
+
+            //  return the lowest card from the longest suit
+            return cards.OrderByDescending(c => cards.Count(c1 => EffectiveSuit(c1) == c.suit)).ThenBy(RankSort).First();
+        }
+
+        private bool HasSoleUnplayedCardStrictlyAbove(Card c, IEnumerable<Card> cardsPlayed)
+        {
+            if (IsCardHigh(c, cardsPlayed))
+                return false;
+
+            var r = RankSort(c);
+            return CardsInSuit(c).Count(card => RankSort(card) > r && !IsCardRecordedAsPlayed(card, cardsPlayed)) == 1;
+        }
+
+        private static bool IsCardRecordedAsPlayed(Card card, IEnumerable<Card> cardsPlayed) =>
+            cardsPlayed.Any(p => p.suit == card.suit && p.rank == card.rank);
+
         protected override Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
         {
             //  In no-trump, slough jokers before signaling a good suit (jokers are dead in NT)
             if (trump == Suit.Unknown && legalCards.Any(c => c.suit == Suit.Joker))
                 return legalCards.First(c => c.suit == Suit.Joker);
+
+            //  NT offense: dump from weakest suit rather than Lavinthal-style strength signals
+            if (trump == Suit.Unknown && !isDefending && IsPartnership)
+                return LowestCardFromWeakestSuitNT(legalCards, cardsPlayed);
 
             return base.TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);
         }
