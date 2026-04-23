@@ -264,6 +264,74 @@ namespace TestBots
         }
 
         [TestMethod]
+        public void LeadSignalFromLead_NT_LeadsHighestBelowTop()
+        {
+            var players = new[]
+            {
+                new TestPlayer(1561, "AH9H3HAS", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2),
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("9H", suggestion.ToString(), "With no partner suit to lead back, lead highest below boss top when suit has length");
+        }
+
+        [TestMethod]
+        public void LeadSignalFromLead_NT_BossAndCoverLeadsLowerCard()
+        {
+            var players = new[]
+            {
+                new TestPlayer(1561, "AH3HAS", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2),
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("3H", suggestion.ToString(), "Doubleton with deck-top boss may signal by leading the lower card");
+        }
+
+        [TestMethod]
+        public void LeadSignalFromLead_NT_KingDoubletonDoesNotUnstopSuit()
+        {
+            var players = new[]
+            {
+                new TestPlayer(1561, "KH3HAS", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2),
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("AS", suggestion.ToString(), "Do not lead from king-doubleton because it strips the stopper");
+        }
+
+        [TestMethod]
+        public void LeadSignalFromLead_NT_KingStopperTripletonLeadsHighestNonTop()
+        {
+            var players = new[]
+            {
+                new TestPlayer(1561, "KHQH3HAS", seat: 0),
+                new TestPlayer(1400, seat: 1),
+                new TestPlayer(1401, seat: 2),
+                new TestPlayer(1400, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("QH", suggestion.ToString(), "With top + stopper cover + one more, lead the highest non-top card");
+        }
+
+        [TestMethod]
         public void SkipLeadTowardPartnerWhenBossCardsCoverRemainingContract_NT()
         {
             var partnerHeartBid = new WhistBid(Suit.Hearts, 3, true, false);

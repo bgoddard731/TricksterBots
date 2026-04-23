@@ -22,18 +22,8 @@ namespace Trickster.Bots
 
             //  If we already have enough "boss" cards left to make our team's bid,
             //  just let them play out rather than trying to come back in partner's suit.
-            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
-            if (declarer != null)
-            {
-                var contract = new WhistBid(declarer.Bid);
-                var partner = players.PartnerOf(declarer);
-                var tricksTaken = declarer.CardsTaken.Length / 8;
-                if (partner != null)
-                    tricksTaken += partner.CardsTaken.Length / 8;
-
-                if (tricksTaken + bossCards.Count >= contract.Tricks)
-                    return null;
-            }
+            if (CanCashBossCardsToCoverContract(players, bossCards))
+                return null;
 
             var partnerSuit = PartnerIntroducedSuitFromAuctionAndSignal(player, players, cardsPlayed, cardsPlayedInOrder);
             if (partnerSuit == Suit.Unknown || !legalCards.Any(c => EffectiveSuit(c) == partnerSuit))
@@ -45,6 +35,79 @@ namespace Trickster.Bots
                 .Where(c => EffectiveSuit(c) == partnerSuit)
                 .OrderByDescending(RankSort)
                 .FirstOrDefault();
+        }
+
+        protected override Card TrySignalGoodSuitFromLead(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed,
+            PlayersCollectionBase players, bool isDefending, IReadOnlyList<Card> bossCards, string cardsPlayedInOrder = null)
+        {
+            if (trump != Suit.Unknown || isDefending)
+                return null;
+
+            if (CanCashBossCardsToCoverContract(players, bossCards))
+                return null;
+
+            //  Lead back from a self-good suit: highest card below a preserved stopper (boss / deck-top + cover + tail).
+            var knownCards = cardsPlayed.Concat(new Hand(player.Hand)).ToList();
+            var candidateSignals = new List<(Card lead, int suitCount)>();
+
+            foreach (var suitGroup in legalCards
+                         .Where(c => c.suit != Suit.Joker)
+                         .GroupBy(EffectiveSuit))
+            {
+                var suitCards = suitGroup.OrderByDescending(RankSort).ToList();
+                if (suitCards.Count < 2)
+                    continue;
+                
+                var top = suitCards[0];
+                Card lead = null;
+
+                //  If we have highest + 1 more, lead the highest non-top card.
+                if (lead == null && IsCardHigh(top, knownCards))
+                {
+                    var holdsDeckTopRank = RankSort(top) == HighRankInSuit(top);
+                    if (holdsDeckTopRank)
+                        lead = suitCards[1];
+                }
+
+                //  With top + stopper cover + one more card, lead the highest non-top card.
+                if (suitCards.Count >= 3)
+                {
+                    var cover = suitCards[1];
+                    if (IsCardEffectivelyTheSame(cover, top, knownCards))
+                        lead = suitCards[1];
+                }
+
+                
+
+                if (lead != null)
+                    candidateSignals.Add((lead, suitCards.Count));
+            }
+
+            return candidateSignals
+                .OrderByDescending(c => c.suitCount)
+                .ThenByDescending(c => RankSort(c.lead))
+                .Select(c => c.lead)
+                .FirstOrDefault();
+        }
+
+        private static int TricksTaken(PlayerBase player)
+        {
+            return string.IsNullOrEmpty(player.CardsTaken) ? 0 : player.CardsTaken.Length / 8;
+        }
+
+        private bool CanCashBossCardsToCoverContract(PlayersCollectionBase players, IReadOnlyList<Card> bossCards)
+        {
+            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
+            if (declarer == null)
+                return false;
+
+            var contract = new WhistBid(declarer.Bid);
+            var partner = players.PartnerOf(declarer);
+            var tricksTaken = TricksTaken(declarer);
+            if (partner != null)
+                tricksTaken += TricksTaken(partner);
+
+            return tricksTaken + bossCards.Count >= contract.Tricks;
         }
 
         private Suit PartnerIntroducedSuitFromAuctionAndSignal(PlayerBase player, PlayersCollectionBase players, IReadOnlyList<Card> cardsPlayed,
