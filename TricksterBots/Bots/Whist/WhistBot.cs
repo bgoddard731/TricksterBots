@@ -54,7 +54,7 @@ namespace Trickster.Bots
 
             //  Lead back from a self-good suit: highest card below a preserved stopper (boss / deck-top + cover + tail).
             var knownCards = cardsPlayed.Concat(new Hand(player.Hand)).ToList();
-            var candidateSignals = new List<(Card lead, int suitCount)>();
+            var candidateSignals = new List<(Suit suit, int suitCount, int signalRank)>();
 
             foreach (var suitGroup in legalCards
                          .Where(c => c.suit != Suit.Joker)
@@ -86,14 +86,23 @@ namespace Trickster.Bots
                 
 
                 if (lead != null)
-                    candidateSignals.Add((lead, suitCards.Count));
+                    candidateSignals.Add((EffectiveSuit(lead), suitCards.Count, RankSort(lead)));
             }
 
-            return candidateSignals
+            // pick the next best suit to lead back in
+            var bestSuit = candidateSignals
                 .OrderByDescending(c => c.suitCount)
-                .ThenByDescending(c => RankSort(c.lead))
-                .Select(c => c.lead)
+                .ThenByDescending(c => c.signalRank)
+                .Select(c => c.suit)
                 .FirstOrDefault();
+
+            // Return the lowest card in selected suit
+            return bestSuit == Suit.Unknown
+                ? null
+                : legalCards
+                    .Where(c => EffectiveSuit(c) == bestSuit)
+                    .OrderBy(RankSort)
+                    .FirstOrDefault();
         }
 
         private static int TricksTaken(PlayerBase player)

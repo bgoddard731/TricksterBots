@@ -270,7 +270,7 @@ namespace TestBots
         }
 
         [TestMethod]
-        public void LeadSignalFromLead_NT_LeadsHighestBelowTop()
+        public void LeadSignalFromLead_NT_LeadsLowestFromSelectedSuit()
         {
             var players = new[]
             {
@@ -283,7 +283,7 @@ namespace TestBots
             var bot = GetBot(Suit.Unknown);
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
             var suggestion = bot.SuggestNextCard(cardState);
-            Assert.AreEqual("9H", suggestion.ToString(), "With no partner suit to lead back, lead highest below boss top when suit has length");
+            Assert.AreEqual("3H", suggestion.ToString(), "With no partner suit to lead back, select the good suit and lead lowest in it");
         }
 
         [TestMethod]
@@ -321,7 +321,7 @@ namespace TestBots
         }
 
         [TestMethod]
-        public void LeadSignalFromLead_NT_KingStopperTripletonLeadsHighestNonTop()
+        public void LeadSignalFromLead_NT_KingStopperTripletonLeadsLowestInGoodSuit()
         {
             var players = new[]
             {
@@ -334,7 +334,7 @@ namespace TestBots
             var bot = GetBot(Suit.Unknown);
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
             var suggestion = bot.SuggestNextCard(cardState);
-            Assert.AreEqual("QH", suggestion.ToString(), "With top + stopper cover + one more, lead the highest non-top card");
+            Assert.AreEqual("3H", suggestion.ToString(), "With top + stopper cover + one more, lead the lowest card in the selected good suit");
         }
 
         [TestMethod]
