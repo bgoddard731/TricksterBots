@@ -118,11 +118,10 @@ namespace Trickster.Bots
             {
                 var suitCards = cards.Where(c => EffectiveSuit(c) == sc.suit).OrderBy(RankSort).ToList();
 
-                //  High is boss and low isn't "touching" it in suit order (honors / adjacent strength)
+
                 if (IsCardHigh(suitCards[1], cardsPlayed) && !AreCardsEquivalent(suitCards[0], suitCards[1], cardsPlayed))
                     return suitCards[0];
 
-                //  Don't pitch the low if either card is the unique second-top in the suit (e.g. king under ace) for high or low contracts
                 if (!suitCards.Any(c => HasSoleUnplayedCardStrictlyAbove(c, cardsPlayed)))
                     return suitCards[0];
             }
