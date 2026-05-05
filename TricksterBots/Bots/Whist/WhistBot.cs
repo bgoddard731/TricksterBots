@@ -23,22 +23,26 @@ namespace Trickster.Bots
             //  If we already have enough "boss" cards left to make our team's bid,
             //  just let them play out rather than trying to come back in partner's suit.
             var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
+            var declarersPartner = declarer != null ? players.PartnerOf(declarer) : null;
+            var isCurrentSeatDeclarer = player.Seat == declarer?.Seat;
             if (declarer != null)
             {
                 var contract = new WhistBid(declarer.Bid);
-                var partner = players.PartnerOf(declarer);
                 var tricksTaken = declarer.CardsTaken.Length / 8;
-                if (partner != null)
-                    tricksTaken += partner.CardsTaken.Length / 8;
+                if (declarersPartner != null)
+                    tricksTaken += declarersPartner.CardsTaken.Length / 8;
 
                 if (tricksTaken + bossCards.Count >= contract.Tricks)
                     return null;
             }
 
+            if (isCurrentSeatDeclarer)
+                return null;
+
             var partnerSuit = PartnerIntroducedSuitFromAuctionAndSignal(player, players, cardsPlayed, cardsPlayedInOrder);
             if (partnerSuit == Suit.Unknown || !legalCards.Any(c => EffectiveSuit(c) == partnerSuit))
                 return null;
-            
+
             // If we have cards in the partner's suit, lead the highest card in that suit to indicate
             // to partner what our hand looks like.
             return legalCards

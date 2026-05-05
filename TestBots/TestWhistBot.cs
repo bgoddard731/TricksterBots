@@ -9,6 +9,12 @@ namespace TestBots
     [TestClass]
     public class TestWhistBot
     {
+        // Declare bid on the actual declarer (partner across the table from the lead)
+        private static readonly int DeclarerSeatBid = (int)new WhistBid(Suit.Clubs, 3, false, true);
+
+        // Bid for the leading player so Whist treats them as offense (partner bid), not defense
+        private static readonly int DeclarersPartnerSeatBid = (int)WhistBid.DeclarerPartnerBid;
+
         [TestMethod]
         public void DiscardJokersInNT()
         {
@@ -177,10 +183,10 @@ namespace TestBots
         {
             var players = new[]
             {
-                new TestPlayer(1564, "4D3DTH2S", cardsTaken: "2C3C4C5C6C7C8C9CTCJCQCLJHJKCTDAC"),
-                new TestPlayer(1400),
-                new TestPlayer(1401) { GoodSuit = Suit.Diamonds },
-                new TestPlayer(1400)
+                new TestPlayer(DeclarersPartnerSeatBid, "4D3DTH2S", cardsTaken: "2C3C4C5C6C7C8C9CTCJCQCLJHJKCTDAC"),
+                new TestPlayer(BidBase.NoBid),
+                new TestPlayer(DeclarerSeatBid, "") { GoodSuit = Suit.Diamonds },
+                new TestPlayer(BidBase.NoBid)
             };
 
             var bot = GetBot(Suit.Clubs);
@@ -194,10 +200,10 @@ namespace TestBots
         {
             var players = new[]
             {
-                new TestPlayer(1561, "5D9DAS3H", seat: 0),
-                new TestPlayer(1400, seat: 1),
-                new TestPlayer(1401, seat: 2) { GoodSuit = Suit.Diamonds },
-                new TestPlayer(1400, seat: 3)
+                new TestPlayer(DeclarersPartnerSeatBid, "5D9DAS3H", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2) { GoodSuit = Suit.Diamonds },
+                new TestPlayer(BidBase.NoBid, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
@@ -212,11 +218,11 @@ namespace TestBots
             var players = new[]
             {
                 //  Our hand has a boss elsewhere (AS) and multiple hearts in the suit partner appears to be promoting.
-                new TestPlayer(1561, "3H8HAS", seat: 0),
-                new TestPlayer(1400, seat: 1),
+                new TestPlayer(DeclarersPartnerSeatBid, "3H8HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
                 //  Partner (seat 2) led 3H; KH later in the trick is higher in the lead suit (promoting hearts).
-                new TestPlayer(1401, seat: 2),
-                new TestPlayer(1400, seat: 3)
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
@@ -233,10 +239,10 @@ namespace TestBots
         {
             var firstLeadPlayers = new[]
             {
-                new TestPlayer(1561, "8HQHAS", seat: 0),
-                new TestPlayer(1400, seat: 1),
-                new TestPlayer(1401, seat: 2),
-                new TestPlayer(1400, seat: 3)
+                new TestPlayer(DeclarersPartnerSeatBid, "8HQHAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
@@ -249,10 +255,10 @@ namespace TestBots
 
             var secondLeadPlayers = new[]
             {
-                new TestPlayer(1561, "8HAS", seat: 0),
-                new TestPlayer(1400, seat: 1),
-                new TestPlayer(1401, seat: 2),
-                new TestPlayer(1400, seat: 3)
+                new TestPlayer(DeclarersPartnerSeatBid, "8HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
             };
 
             var secondLeadState = new TestCardState<WhistOptions>(bot, secondLeadPlayers, trumpSuit: Suit.Unknown)
