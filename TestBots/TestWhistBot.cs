@@ -274,10 +274,10 @@ namespace TestBots
         {
             var players = new[]
             {
-                new TestPlayer(1561, "AH9H3HAS", seat: 0),
-                new TestPlayer(1400, seat: 1),
-                new TestPlayer(1401, seat: 2),
-                new TestPlayer(1400, seat: 3)
+                new TestPlayer(DeclarersPartnerSeatBid, "AH9H3HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
@@ -291,10 +291,10 @@ namespace TestBots
         {
             var players = new[]
             {
-                new TestPlayer(1561, "AH3HAS", seat: 0),
-                new TestPlayer(1400, seat: 1),
-                new TestPlayer(1401, seat: 2),
-                new TestPlayer(1400, seat: 3)
+                new TestPlayer(DeclarersPartnerSeatBid, "AH3HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
@@ -308,16 +308,16 @@ namespace TestBots
         {
             var players = new[]
             {
-                new TestPlayer(1561, "KH3HAS", seat: 0),
-                new TestPlayer(1400, seat: 1),
-                new TestPlayer(1401, seat: 2),
-                new TestPlayer(1400, seat: 3)
+                new TestPlayer(DeclarersPartnerSeatBid, "KH3HQS6S5S", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
             var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
             var suggestion = bot.SuggestNextCard(cardState);
-            Assert.AreEqual("AS", suggestion.ToString(), "Do not lead from king-doubleton because it strips the stopper");
+            Assert.AreEqual("5S", suggestion.ToString(), "Do not lead from king-doubleton because it strips the stopper");
         }
 
         [TestMethod]
@@ -325,10 +325,10 @@ namespace TestBots
         {
             var players = new[]
             {
-                new TestPlayer(1561, "KHQH3HAS", seat: 0),
-                new TestPlayer(1400, seat: 1),
-                new TestPlayer(1401, seat: 2),
-                new TestPlayer(1400, seat: 3)
+                new TestPlayer(DeclarersPartnerSeatBid, "KHQH3HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
             };
 
             var bot = GetBot(Suit.Unknown);
