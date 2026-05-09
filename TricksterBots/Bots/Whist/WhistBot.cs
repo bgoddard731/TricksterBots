@@ -52,57 +52,69 @@ namespace Trickster.Bots
             if (CanCashBossCardsToCoverContract(players, bossCards))
                 return null;
 
-            //  Lead back from a self-good suit: highest card below a preserved stopper (boss / deck-top + cover + tail).
-            var knownCards = cardsPlayed.Concat(new Hand(player.Hand)).ToList();
-            var candidateSignals = new List<(Suit suit, int suitCount, int signalRank)>();
+            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
+            var isCurrentSeatDeclarer = player.Seat == declarer?.Seat;
 
-            foreach (var suitGroup in legalCards
-                         .Where(c => c.suit != Suit.Joker)
-                         .GroupBy(EffectiveSuit))
+            if (isCurrentSeatDeclarer)
+                return null;
+
+            //  Detect self-good suits (boss / deck-top + cover + tail), pick the best suit to signal, then lead the lowest card in that suit.
+            var knownCards = cardsPlayed.Concat(new Hand(player.Hand)).ToList();
+            var candidateSignals = new List<(Suit suit, int suitCount, int rankForSuitOrdering)>();
+
+            foreach (var suitGroup in legalCards.GroupBy(EffectiveSuit))
             {
+                var suit = suitGroup.Key;
                 var suitCards = suitGroup.OrderByDescending(RankSort).ToList();
                 if (suitCards.Count < 2)
                     continue;
-                
-                var top = suitCards[0];
-                Card lead = null;
 
-                //  If we have highest + 1 more, lead the highest non-top card.
-                if (lead == null && IsCardHigh(top, knownCards))
+                var top = suitCards[0];
+                int? rankForSuitOrdering = null;
+
+                if (rankForSuitOrdering == null && IsCardHigh(top, knownCards))
                 {
                     var holdsDeckTopRank = RankSort(top) == HighRankInSuit(top);
                     if (holdsDeckTopRank)
-                        lead = suitCards[1];
+                        rankForSuitOrdering = RankSort(suitCards[1]);
                 }
 
-                //  With top + stopper cover + one more card, lead the highest non-top card.
                 if (suitCards.Count >= 3)
                 {
                     var cover = suitCards[1];
                     if (IsCardEffectivelyTheSame(cover, top, knownCards))
-                        lead = suitCards[1];
+                        rankForSuitOrdering = RankSort(cover);
                 }
 
-                
-
-                if (lead != null)
-                    candidateSignals.Add((EffectiveSuit(lead), suitCards.Count, RankSort(lead)));
+                if (rankForSuitOrdering != null)
+                    candidateSignals.Add((suit, suitCards.Count, rankForSuitOrdering.Value));
             }
 
-            // pick the next best suit to lead back in
+            //  Choose a qualifying suit (longest first, then higher tie-break rank); we lead the lowest legal card in that suit below.
             var bestSuit = candidateSignals
                 .OrderByDescending(c => c.suitCount)
-                .ThenByDescending(c => c.signalRank)
+                .ThenByDescending(c => c.rankForSuitOrdering)
                 .Select(c => c.suit)
                 .FirstOrDefault();
 
-            // Return the lowest card in selected suit
-            return bestSuit == Suit.Unknown
-                ? null
-                : legalCards
+            if (bestSuit != Suit.Unknown)
+            {
+                return legalCards
                     .Where(c => EffectiveSuit(c) == bestSuit)
                     .OrderBy(RankSort)
                     .FirstOrDefault();
+            }
+
+            //  If we don't have any winners with cover, we lead lowest in longest suit instead of falling back to trying to take with a boss card.
+            var longestSuitGroup = legalCards
+                .GroupBy(EffectiveSuit)
+                .OrderByDescending(g => g.Count())
+                .ThenBy(g => g.Key)
+                .FirstOrDefault();
+
+            return longestSuitGroup == null
+                ? null
+                : longestSuitGroup.OrderBy(RankSort).FirstOrDefault();
         }
 
         private static int TricksTaken(PlayerBase player)

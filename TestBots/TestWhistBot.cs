@@ -338,6 +338,25 @@ namespace TestBots
         }
 
         [TestMethod]
+        public void LeadSignalFromLead_NT_LeadsLowestFromLongestSuitFallback()
+        {
+            // No partner-introduced suit, no qualifying "good suit" signal pattern, but we still choose a lead inside
+            // TrySignalGoodSuitFromLead: lowest card in the longest suit (before TryTakeEm would cash a boss).
+            var players = new[]
+            {
+                new TestPlayer(DeclarersPartnerSeatBid, "3D4D5D3H2HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("3D", suggestion.ToString(), "Longest suit is diamonds; lead lowest there, not spade boss");
+        }
+
+        [TestMethod]
         public void SkipLeadTowardPartnerWhenBossCardsCoverRemainingContract_NT()
         {
             var partnerHeartBid = new WhistBid(Suit.Hearts, 3, true, false);
