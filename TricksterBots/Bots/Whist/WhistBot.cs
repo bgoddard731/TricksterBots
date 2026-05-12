@@ -73,17 +73,13 @@ namespace Trickster.Bots
                 int? rankForSuitOrdering = null;
 
                 if (IsCardHigh(top, knownCards))
+                    rankForSuitOrdering = RankSort(top);
+                else if (suitCards.Count >= 3)
                 {
-                    var holdsDeckTopRank = RankSort(top) == HighRankInSuit(top);
-                    if (holdsDeckTopRank)
-                        rankForSuitOrdering = RankSort(suitCards[1]);
-                }
-
-                if (suitCards.Count >= 3)
-                {
-                    var cover = suitCards[1];
-                    if (IsCardEffectivelyTheSame(cover, top, knownCards))
-                        rankForSuitOrdering = RankSort(cover);
+                    // If we have > 3 cards in a suit, and we determine that we can cover the top card with a stopper such
+                    // that it can become the high card, we can signal this suit by leading the lowest card in that suit.
+                    if (TopCanBeCovered(top, cardsPlayed))
+                        rankForSuitOrdering = RankSort(top);
                 }
 
                 if (rankForSuitOrdering != null)
@@ -115,6 +111,16 @@ namespace Trickster.Bots
             return longestSuitGroup == null
                 ? null
                 : longestSuitGroup.OrderBy(RankSort).FirstOrDefault();
+        }
+
+        private bool TopCanBeCovered(Card top, IReadOnlyList<Card> cardsPlayed)
+        {
+            var suit = EffectiveSuit(top);
+            var topRank = RankSort(top);
+            var highestInSuit = HighRankInSuit(top);
+            var rankGapToDeckTop = highestInSuit - topRank;
+            var playedAboveTop = cardsPlayed.Count(c => EffectiveSuit(c) == suit && RankSort(c) > topRank);
+            return rankGapToDeckTop - playedAboveTop <= 1;
         }
 
         private static int TricksTaken(PlayerBase player)
