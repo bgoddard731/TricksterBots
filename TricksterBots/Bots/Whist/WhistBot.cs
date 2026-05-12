@@ -72,7 +72,7 @@ namespace Trickster.Bots
                 var top = suitCards[0];
                 int? rankForSuitOrdering = null;
 
-                if (rankForSuitOrdering == null && IsCardHigh(top, knownCards))
+                if (IsCardHigh(top, knownCards))
                 {
                     var holdsDeckTopRank = RankSort(top) == HighRankInSuit(top);
                     if (holdsDeckTopRank)
