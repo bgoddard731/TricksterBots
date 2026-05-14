@@ -86,10 +86,10 @@ namespace Trickster.Bots
                     candidateSignals.Add((suit, suitCards.Count, rankForSuitOrdering.Value));
             }
 
-            //  Choose a qualifying suit (longest first, then higher tie-break rank); we lead the lowest legal card in that suit below.
+            //  Choose a qualifying suit (higher rank then longest suit tiebreak); we lead the lowest legal card in that suit below.
             var bestSuit = candidateSignals
-                .OrderByDescending(c => c.suitCount)
-                .ThenByDescending(c => c.rankForSuitOrdering)
+                .OrderByDescending(c => c.rankForSuitOrdering)
+                .ThenByDescending(c => c.suitCount)
                 .Select(c => c.suit)
                 .FirstOrDefault();
 
