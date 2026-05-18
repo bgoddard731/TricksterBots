@@ -270,6 +270,93 @@ namespace TestBots
         }
 
         [TestMethod]
+        public void LeadSignalFromLead_NT_LeadsLowestFromSelectedSuit()
+        {
+            var players = new[]
+            {
+                new TestPlayer(DeclarersPartnerSeatBid, "AH9H3HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("3H", suggestion.ToString(), "With no partner suit to lead back, select the good suit and lead lowest in it");
+        }
+
+        [TestMethod]
+        public void LeadSignalFromLead_NT_BossAndCoverLeadsLowerCard()
+        {
+            var players = new[]
+            {
+                new TestPlayer(DeclarersPartnerSeatBid, "AH3HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("3H", suggestion.ToString(), "Doubleton with deck-top boss may signal by leading the lower card");
+        }
+
+        [TestMethod]
+        public void LeadSignalFromLead_NT_KingDoubletonDoesNotUnstopSuit()
+        {
+            var players = new[]
+            {
+                new TestPlayer(DeclarersPartnerSeatBid, "KH3HQS6S5S", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("5S", suggestion.ToString(), "Do not lead from king-doubleton because it strips the stopper");
+        }
+
+        [TestMethod]
+        public void LeadSignalFromLead_NT_KingStopperTripletonLeadsLowestInGoodSuit()
+        {
+            var players = new[]
+            {
+                new TestPlayer(DeclarersPartnerSeatBid, "KHQH3HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("3H", suggestion.ToString(), "With top + stopper cover + one more, lead the lowest card in the selected good suit");
+        }
+
+        [TestMethod]
+        public void LeadSignalFromLead_NT_LeadsLowestFromLongestSuitFallback()
+        {
+            // No partner-introduced suit, no qualifying "good suit" signal pattern, but we still choose a lead inside
+            // TrySignalGoodSuitFromLead: lowest card in the longest suit (before TryTakeEm would cash a boss).
+            var players = new[]
+            {
+                new TestPlayer(DeclarersPartnerSeatBid, "3D4D5D3H2HAS", seat: 0),
+                new TestPlayer(BidBase.NoBid, seat: 1),
+                new TestPlayer(DeclarerSeatBid, "", seat: 2),
+                new TestPlayer(BidBase.NoBid, seat: 3)
+            };
+
+            var bot = GetBot(Suit.Unknown);
+            var cardState = new TestCardState<WhistOptions>(bot, players, trumpSuit: Suit.Unknown);
+            var suggestion = bot.SuggestNextCard(cardState);
+            Assert.AreEqual("3D", suggestion.ToString(), "Longest suit is diamonds; lead lowest there, not spade boss");
+        }
+
+        [TestMethod]
         public void SkipLeadTowardPartnerWhenBossCardsCoverRemainingContract_NT()
         {
             var partnerHeartBid = new WhistBid(Suit.Hearts, 3, true, false);

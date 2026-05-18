@@ -22,19 +22,11 @@ namespace Trickster.Bots
 
             //  If we already have enough "boss" cards left to make our team's bid,
             //  just let them play out rather than trying to come back in partner's suit.
-            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
-            var declarersPartner = declarer != null ? players.PartnerOf(declarer) : null;
-            var isCurrentSeatDeclarer = player.Seat == declarer?.Seat;
-            if (declarer != null)
-            {
-                var contract = new WhistBid(declarer.Bid);
-                var tricksTaken = declarer.CardsTaken.Length / 8;
-                if (declarersPartner != null)
-                    tricksTaken += declarersPartner.CardsTaken.Length / 8;
+            if (CanCashBossCardsToCoverContract(players, bossCards))
+                return null;
 
-                if (tricksTaken + bossCards.Count >= contract.Tricks)
-                    return null;
-            }
+            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
+            var isCurrentSeatDeclarer = player.Seat == declarer?.Seat;
 
             if (isCurrentSeatDeclarer)
                 return null;
@@ -49,6 +41,106 @@ namespace Trickster.Bots
                 .Where(c => EffectiveSuit(c) == partnerSuit)
                 .OrderByDescending(RankSort)
                 .FirstOrDefault();
+        }
+
+        protected override Card TrySignalGoodSuitFromLead(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed,
+            PlayersCollectionBase players, bool isDefending, IReadOnlyList<Card> bossCards, string cardsPlayedInOrder = null)
+        {
+            if (trump != Suit.Unknown || isDefending)
+                return null;
+
+            if (CanCashBossCardsToCoverContract(players, bossCards))
+                return null;
+
+            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
+            var isCurrentSeatDeclarer = player.Seat == declarer?.Seat;
+
+            if (isCurrentSeatDeclarer)
+                return null;
+
+            //  Detect self-good suits (boss / deck-top + cover + tail), pick the best suit to signal, then lead the lowest card in that suit.
+            var knownCards = cardsPlayed.Concat(new Hand(player.Hand)).ToList();
+            var candidateSignals = new List<(Suit suit, int suitCount, int rankForSuitOrdering)>();
+
+            foreach (var suitGroup in legalCards.GroupBy(EffectiveSuit))
+            {
+                var suit = suitGroup.Key;
+                var suitCards = suitGroup.OrderByDescending(RankSort).ToList();
+                if (suitCards.Count < 2)
+                    continue;
+
+                var top = suitCards[0];
+                int? rankForSuitOrdering = null;
+
+                if (IsCardHigh(top, knownCards))
+                    rankForSuitOrdering = RankSort(top);
+                else if (suitCards.Count >= 3)
+                {
+                    // If we have > 3 cards in a suit, and we determine that we can cover the top card with a stopper such
+                    // that it can become the high card, we can signal this suit by leading the lowest card in that suit.
+                    if (TopCanBeCovered(top, cardsPlayed))
+                        rankForSuitOrdering = RankSort(top);
+                }
+
+                if (rankForSuitOrdering != null)
+                    candidateSignals.Add((suit, suitCards.Count, rankForSuitOrdering.Value));
+            }
+
+            //  Choose a qualifying suit (higher rank then longest suit tiebreak); we lead the lowest legal card in that suit below.
+            var bestSuit = candidateSignals
+                .OrderByDescending(c => c.rankForSuitOrdering)
+                .ThenByDescending(c => c.suitCount)
+                .Select(c => c.suit)
+                .FirstOrDefault();
+
+            if (bestSuit != Suit.Unknown)
+            {
+                return legalCards
+                    .Where(c => EffectiveSuit(c) == bestSuit)
+                    .OrderBy(RankSort)
+                    .FirstOrDefault();
+            }
+
+            //  If we don't have any winners with cover, we lead lowest in longest suit instead of falling back to trying to take with a boss card.
+            var longestSuitGroup = legalCards
+                .GroupBy(EffectiveSuit)
+                .OrderByDescending(g => g.Count())
+                .ThenBy(g => g.Key)
+                .FirstOrDefault();
+
+            return longestSuitGroup == null
+                ? null
+                : longestSuitGroup.OrderBy(RankSort).FirstOrDefault();
+        }
+
+        private bool TopCanBeCovered(Card top, IReadOnlyList<Card> cardsPlayed)
+        {
+            var suit = EffectiveSuit(top);
+            var topRank = RankSort(top);
+            var highestInSuit = HighRankInSuit(top);
+            var rankGapToDeckTop = highestInSuit - topRank;
+            var playedAboveTop = cardsPlayed.Count(c => EffectiveSuit(c) == suit && RankSort(c) > topRank);
+            return rankGapToDeckTop - playedAboveTop <= 1;
+        }
+
+        private static int TricksTaken(PlayerBase player)
+        {
+            return string.IsNullOrEmpty(player.CardsTaken) ? 0 : player.CardsTaken.Length / 8;
+        }
+
+        private bool CanCashBossCardsToCoverContract(PlayersCollectionBase players, IReadOnlyList<Card> bossCards)
+        {
+            var declarer = players.FirstOrDefault(p => new WhistBid(p.Bid).IsDeclareBid);
+            if (declarer == null)
+                return false;
+
+            var contract = new WhistBid(declarer.Bid);
+            var partner = players.PartnerOf(declarer);
+            var tricksTaken = TricksTaken(declarer);
+            if (partner != null)
+                tricksTaken += TricksTaken(partner);
+
+            return tricksTaken + bossCards.Count >= contract.Tricks;
         }
 
         private Suit PartnerIntroducedSuitFromAuctionAndSignal(PlayerBase player, PlayersCollectionBase players, IReadOnlyList<Card> cardsPlayed,
