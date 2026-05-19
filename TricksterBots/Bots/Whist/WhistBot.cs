@@ -212,18 +212,18 @@ namespace Trickster.Bots
             foreach (var sc in doubletonSuitCounts)
             {
                 var suitCards = cards.Where(c => EffectiveSuit(c) == sc.suit).OrderBy(RankSort).ToList();
+                var low = suitCards[0];
+                var high = suitCards[1];
 
-
-                if (IsCardHigh(suitCards[1], cardsPlayed) && !AreCardsEquivalent(suitCards[0], suitCards[1], cardsPlayed))
-                    return suitCards[0];
-
-                if (!suitCards.Any(c => HasSoleUnplayedCardStrictlyAbove(c, cardsPlayed)))
-                    return suitCards[0];
+                if (!IsCardHigh(high, cardsPlayed) && !HasSoleUnplayedCardStrictlyAbove(high, cardsPlayed))
+                    return low;
             }
 
-            //  return the lowest card from the longest suit
-            return cards.OrderByDescending(c => cards.Count(c1 => EffectiveSuit(c1) == c.suit)).ThenBy(RankSort).First();
+            //  return the lowest card from the shortest suit
+            return cards.OrderBy(c => cards.Count(c1 => EffectiveSuit(c1) == c.suit)).ThenBy(RankSort).First();
         }
+
+       
 
         private bool HasSoleUnplayedCardStrictlyAbove(Card c, IEnumerable<Card> cardsPlayed)
         {
@@ -244,7 +244,7 @@ namespace Trickster.Bots
                 return legalCards.First(c => c.suit == Suit.Joker);
 
             //  NT offense: dump from weakest suit rather than Lavinthal-style strength signals
-            if (trump == Suit.Unknown && !isDefending && IsPartnership)
+            if (trump == Suit.Unknown && !isDefending)
                 return LowestCardFromWeakestSuitNT(legalCards, cardsPlayed);
 
             return base.TrySignalGoodSuit(player, legalCards, cardsPlayed, isDefending);

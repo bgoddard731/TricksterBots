@@ -160,7 +160,7 @@ namespace TestBots
         }
 
         [TestMethod]
-        public void NT_DeclarerSloughWhenVoid_UsesWeakestSuitDump_NotGoodSuitSignal()
+        public void NT_OffenseSloughWeakSuit()
         {
             // NT declaring side: TrySignalGoodSuit routes to LowestCardFromWeakestSuitNT (not base Lavinthal).
             // Void in clubs; singleton 2H is not boss while ace of hearts is still unplayed; expect that slough.
