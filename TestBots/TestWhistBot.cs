@@ -162,7 +162,7 @@ namespace TestBots
         [TestMethod]
         public void NT_OffenseSloughWeakSuit()
         {
-            // NT declaring side: TrySignalGoodSuit routes to LowestCardFromWeakestSuitNT (not base Lavinthal).
+            // NT declaring side: TrySignalGoodSuit routes to LowestCardFromWeakestSuitNT instead of signaling strong suit.
             // Void in clubs; singleton 2H is not boss while ace of hearts is still unplayed; expect that slough.
             var declarerNt = (int)new WhistBid(Suit.Unknown, 1, true, true);
             var players = new[]

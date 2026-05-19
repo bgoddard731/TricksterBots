@@ -234,7 +234,7 @@ namespace Trickster.Bots
             if (trump == Suit.Unknown && legalCards.Any(c => c.suit == Suit.Joker))
                 return legalCards.First(c => c.suit == Suit.Joker);
 
-            //  NT offense: dump from weakest suit rather than Lavinthal-style strength signals
+            //  NT offense: dump from weakest suit rather than signaling strong suit
             if (trump == Suit.Unknown && !isDefending)
                 return LowestCardFromWeakestSuitNT(legalCards, cardsPlayed);
 
