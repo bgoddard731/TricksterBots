@@ -213,7 +213,7 @@ namespace TestBots
         }
 
         [TestMethod]
-        public void LeadBackPartnerGoodSuit_NT_DeclarerLeadsLowest()
+        public void LeadBackPartnerGoodSuit_NT_BidderLeadsLowest()
         {
             var declarerNtBid = (int)new WhistBid(Suit.Unknown, 1, true, false);
             var players = new[]
