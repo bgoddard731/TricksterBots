@@ -113,15 +113,20 @@ namespace Trickster.Bots
                 : longestSuitGroup.OrderBy(RankSort).FirstOrDefault();
         }
 
-        private bool TopCanBeCovered(Card top, IReadOnlyList<Card> cardsPlayed)
+        private int UnplayedCardCountAbove(Card c, IReadOnlyList<Card> cardsPlayed)
         {
-            var suit = EffectiveSuit(top);
-            var topRank = RankSort(top);
-            var highestInSuit = HighRankInSuit(top);
-            var rankGapToDeckTop = highestInSuit - topRank;
-            var playedAboveTop = cardsPlayed.Count(c => EffectiveSuit(c) == suit && RankSort(c) > topRank);
-            return rankGapToDeckTop - playedAboveTop <= 1;
+            var suit = EffectiveSuit(c);
+            var rank = RankSort(c);
+            var rankGapToDeckTop = HighRankInSuit(c) - rank;
+            var playedAbove = cardsPlayed.Count(p => EffectiveSuit(p) == suit && RankSort(p) > rank);
+            return rankGapToDeckTop - playedAbove;
         }
+
+        private bool TopCanBeCovered(Card top, IReadOnlyList<Card> cardsPlayed) =>
+            UnplayedCardCountAbove(top, cardsPlayed) <= 1;
+
+        private bool HasOnlyOneCardAbove(Card c, IReadOnlyList<Card> cardsPlayed) =>
+            !IsCardHigh(c, cardsPlayed) && UnplayedCardCountAbove(c, cardsPlayed) == 1;
 
         private static int TricksTaken(PlayerBase player)
         {
@@ -215,27 +220,13 @@ namespace Trickster.Bots
                 var low = suitCards[0];
                 var high = suitCards[1];
 
-                if (!IsCardHigh(high, cardsPlayed) && !HasSoleUnplayedCardStrictlyAbove(high, cardsPlayed))
+                if (!IsCardHigh(high, cardsPlayed) && !HasOnlyOneCardAbove(high, cardsPlayed))
                     return low;
             }
 
             //  return the lowest card from the shortest suit
             return cards.OrderBy(c => cards.Count(c1 => EffectiveSuit(c1) == c.suit)).ThenBy(RankSort).First();
         }
-
-       
-
-        private bool HasSoleUnplayedCardStrictlyAbove(Card c, IEnumerable<Card> cardsPlayed)
-        {
-            if (IsCardHigh(c, cardsPlayed))
-                return false;
-
-            var r = RankSort(c);
-            return CardsInSuit(c).Count(card => RankSort(card) > r && !IsCardRecordedAsPlayed(card, cardsPlayed)) == 1;
-        }
-
-        private static bool IsCardRecordedAsPlayed(Card card, IEnumerable<Card> cardsPlayed) =>
-            cardsPlayed.Any(p => p.suit == card.suit && p.rank == card.rank);
 
         protected override Card TrySignalGoodSuit(PlayerBase player, IReadOnlyList<Card> legalCards, IReadOnlyList<Card> cardsPlayed, bool isDefending)
         {
